@@ -1,0 +1,76 @@
+package todo;
+import done.*;
+import se.lth.cs.realtime.semaphore.Semaphore;
+import se.lth.cs.realtime.semaphore.MutexSem;
+
+public class AlarmClock extends Thread {
+
+	private static ClockInput	input;
+	private static ClockOutput	output;
+	private static Semaphore	sem;
+	private int currentTime;
+
+	public AlarmClock(ClockInput i, ClockOutput o) {
+		input = i;
+		output = o;
+		sem = input.getSemaphoreInstance();
+	}
+
+	// The AlarmClock thread is started by the simulator. No
+	// need to start it by yourself, if you do you will get
+	// an IllegalThreadStateException. The implementation
+	// below is a simple alarmclock thread that beeps upon 
+	// each keypress. To be modified in the lab.
+	public void run() {
+		initTime();
+		while (true) {
+			//sem.take();
+			//output.doAlarm();
+			if(System.currentTimeMillis()%1000 == 0){
+				incrementTime();
+			}
+			
+		}
+		
+		
+			
+	}
+	
+	private void incrementTime(){
+		currentTime+= 1000;
+	}
+	
+	private void initTime(){
+		long t = System.currentTimeMillis();
+		currentTime = toClockTime(t);
+		output.showTime(currentTime);
+	}
+	private static int toClockTime(long time){
+		long timeofday = time%86400000;
+		int hour = (int) (timeofday/3600000 + 2);
+		timeofday = timeofday%3600000;
+		int minute = (int) (timeofday/60000);
+		timeofday = timeofday%60000;
+		int second = (int) (timeofday/1000);
+		
+		Integer iHour = new Integer(hour);
+		Integer iMinute = new Integer(minute);
+		Integer iSecond = new Integer(second);
+		
+		String hourpadding = "";
+		String minutepadding = "";
+		String secondpadding = "";
+		if(hour < 10){
+			hourpadding = "0";
+		}
+		if(minute < 10){
+			minutepadding = "0";
+		}
+		if(second < 10){
+			secondpadding = "0";
+		}
+		
+		String currTimeString = hourpadding + iHour.toString()+ minutepadding + iMinute.toString()+ secondpadding +iSecond.toString();
+		return Integer.parseInt(currTimeString);
+	}
+}
