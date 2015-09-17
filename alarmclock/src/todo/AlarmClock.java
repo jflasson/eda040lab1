@@ -1,82 +1,66 @@
 package todo;
-import done.*;
-import se.lth.cs.realtime.semaphore.Semaphore;
-import se.lth.cs.realtime.semaphore.MutexSem;
 
+import done.ClockInput;
+import done.ClockOutput;
+import se.lth.cs.realtime.semaphore.Semaphore;
+
+/**
+ * Handles time incrementation, display update and alarm detection.
+ */
 public class AlarmClock extends Thread {
 
-	private static ClockInput	input;
-	private static ClockOutput	output;
-	private static Semaphore	sem;
-	private int currentTime;
-
+	private static ClockInput input;
+	private static ClockOutput output;
+	private static Semaphore sem;
+//Vad gör man med semaforerna?
 	public AlarmClock(ClockInput i, ClockOutput o) {
 		input = i;
 		output = o;
 		sem = input.getSemaphoreInstance();
+		initTime();
+		ButtonHandler bHandler = new ButtonHandler(i, o);
+		bHandler.start();
 	}
 
 	// The AlarmClock thread is started by the simulator. No
 	// need to start it by yourself, if you do you will get
 	// an IllegalThreadStateException. The implementation
-	// below is a simple alarmclock thread that beeps upon 
+	// below is a simple alarmclock thread that beeps upon
 	// each keypress. To be modified in the lab.
 	public void run() {
-		initTime();
 		while (true) {
-			
-			
-			//sem.take();
-			//output.doAlarm();
-			if(System.currentTimeMillis()%1000 == 0){
+			if (System.currentTimeMillis() % 1000 == 0) {
 				System.out.println("TIME++");
 				incrementTime();
-				output.showTime(toClockTime(currentTime));
-				System.out.println(currentTime);
-				
+				output.showTime(Shared.toClockTime(Shared.currentTime));
+				System.out.println(Shared.currentTime);
+				// Kolla larmet här
+				if (input.getAlarmFlag()) {
+					boolean alarm = Shared.checkAlarm();
+					if (alarm) {
+						output.doAlarm();
+					}
+				}
+				try {
+					//hur länge ska man sleepa?
+					sleep(900);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-			
 		}
-		
-		
-			
 	}
-	
-	private void incrementTime(){
-		currentTime+= 1000;
+
+	private void incrementTime() {
+		Shared.currentTime += 1000;
 	}
-	
-	private void initTime(){
-		long t = System.currentTimeMillis();
-		currentTime = (int) (t%86400000);
-		output.showTime(currentTime);
+
+	private void initTime() {
+		long t = System.currentTimeMillis() + 3600000 * 2; // Compensating for
+															// GMT + 2
+		Shared.currentTime = (int) (t % 86400000);
+		output.showTime(Shared.currentTime);
 	}
-	private static int toClockTime(long time){
-		long timeofday = time%86400000;
-		int hour = (int) (timeofday/3600000 + 2);
-		timeofday = timeofday%3600000;
-		int minute = (int) (timeofday/60000);
-		timeofday = timeofday%60000;
-		int second = (int) (timeofday/1000);
-		
-		Integer iHour = new Integer(hour);
-		Integer iMinute = new Integer(minute);
-		Integer iSecond = new Integer(second);
-		
-		String hourpadding = "";
-		String minutepadding = "";
-		String secondpadding = "";
-		if(hour < 10){
-			hourpadding = "0";
-		}
-		if(minute < 10){
-			minutepadding = "0";
-		}
-		if(second < 10){
-			secondpadding = "0";
-		}
-		
-		String currTimeString = hourpadding + iHour.toString()+ minutepadding + iMinute.toString()+ secondpadding +iSecond.toString();
-		return Integer.parseInt(currTimeString);
-	}
+
 }
