@@ -1,5 +1,7 @@
 package todo;
 
+import done.ClockInput;
+import done.ClockOutput;
 import se.lth.cs.realtime.semaphore.MutexSem;
 
 /**
@@ -11,33 +13,24 @@ public class Shared {
 	private static boolean alarmIsRunning;
 	private static int numOfBeeps;
 	private static MutexSem mutex = new MutexSem();
-	
-	public static int getCurrentTime(){
-		return currentTime;
-	}
-	
-	public static void setCurrentTime(int time){
+
+	private static void setCurrentTime(int time) {
 		mutex.take();
 		currentTime = time;
 		mutex.give();
 	}
-	
-	public static void addToCurrentTime(int toAdd){
+
+	private static void addToCurrentTime(int toAdd) {
 		mutex.take();
 		currentTime += toAdd;
+		if (currentTime >= 86400000){
+			currentTime = 0;
+		}
 		mutex.give();
 	}
-	
-	public static void resetNumOfBeeps(){
+
+	public static void resetNumOfBeeps() {
 		numOfBeeps = 0;
-	}
-	
-	public static int getNumOfBeeps(){
-		return numOfBeeps;
-	}
-	
-	public static void incrementNumOfBeeps(){
-		numOfBeeps++;
 	}
 
 	public static void setAlarm(int i) {
@@ -52,39 +45,22 @@ public class Shared {
 		mutex.give();
 	}
 
-	public static boolean checkAlarm() {
-		System.out.println("CT:" + currentTime + " AT: " + alarmTime);
+	private static boolean checkAlarm() {
+		// System.out.println("CT:" + currentTime + " AT: " + alarmTime);
 		if (currentTime == alarmTime) {
 			return true;
 		}
 		return false;
 	}
-	
-	public static void setAlarmStatus(boolean status){
-		alarmIsRunning = status;
-	}
-	
-	public static boolean getAlarmStatus(){
-		return alarmIsRunning;
-	}
 
 	// Below are conversion methods
 	public static int toMillis(int i) {
-		Integer iInteger = new Integer(i);
-		String readableTime = iInteger.toString();
-		int l = readableTime.length();
-		int d = 6 - l;
-		for (int k = 0; k < d; k++) {
-			readableTime = "0" + readableTime;
-		}
-		String sHour = readableTime.substring(0, 2);
-		String sMinute = readableTime.substring(2, 4);
-		String sSecond = readableTime.substring(4, 6);
-		int iHour = Integer.parseInt(sHour);
-		int iMinute = Integer.parseInt(sMinute);
-		int iSecond = Integer.parseInt(sSecond);
-		int time = iHour * 3600000 + iMinute * 60000 + iSecond * 1000;
-		return time;
+		int seconds = i % 100;
+		i = i / 100;
+		int minutes = i % 100;
+		i = i / 100;
+		int hours = i;
+		return hours * 3600000 + minutes * 60000 + seconds * 1000;
 	}
 
 	public static int toClockTime(long time) {
@@ -94,23 +70,68 @@ public class Shared {
 		int minute = (int) (timeofday / 60000);
 		timeofday = timeofday % 60000;
 		int second = (int) (timeofday / 1000);
-		Integer iHour = new Integer(hour);
-		Integer iMinute = new Integer(minute);
-		Integer iSecond = new Integer(second);
-		String hourpadding = "";
-		String minutepadding = "";
-		String secondpadding = "";
-		if (hour < 10) {
-			hourpadding = "0";
+		int timeOut = hour * 10000 + minute * 100 + second;
+		return timeOut;
+	}
+
+	public static void incrementTime(ClockInput input, ClockOutput output) {
+		addToCurrentTime(1000);
+		//System.out.println(currentTime);
+		output.showTime(toClockTime(currentTime));
+		// System.out.println("Current millistime " + Shared.getCurrentTime());
+		// System.out.println("Current clocktime " +
+		// Shared.toClockTime(Shared.getCurrentTime()));
+		if (input.getAlarmFlag()) {
+			boolean alarm = checkAlarm();
+			// System.out.println("Checkalarm: " + alarm);
+			if (alarm) {
+				alarmIsRunning = true;
+			}
 		}
-		if (minute < 10) {
-			minutepadding = "0";
+		if (alarmIsRunning && numOfBeeps < 20) {
+			output.doAlarm();
+			numOfBeeps++;
+			if (numOfBeeps == 20) {
+				numOfBeeps = 0;
+				alarmIsRunning = true;
+			}
 		}
-		if (second < 10) {
-			secondpadding = "0";
+
+	}
+
+	public static void initTime(ClockInput input, ClockOutput output) {
+		long t = System.currentTimeMillis() + 3600000 * 2; // Compensating for
+															// GMT + 2
+		setCurrentTime((int) (t % 86400000));
+		setCurrentTime(currentTime / 1000);
+		setCurrentTime(currentTime * 1000);
+		// System.out.println("Time initialized to: " +
+		// Shared.getCurrentTime());
+		// System.out.println("Corresponding to clocktime: " +
+		// Shared.toClockTime(Shared.getCurrentTime()));
+		output.showTime(toClockTime(currentTime));
+	}
+
+	public static void handleInput(ClockInput input) {
+		// System.out.println("Knapptråd");
+		int choice = input.getChoice();
+		// System.out.println(choice);
+		if (alarmIsRunning) {
+			if (choice == input.SHOW_TIME || choice == input.SET_TIME || choice == input.SET_ALARM) {
+				// System.out.println("Alarm stopped!");
+				alarmIsRunning = false;
+				numOfBeeps = 0;
+			}
 		}
-		String currTimeString = hourpadding + iHour.toString() + minutepadding + iMinute.toString() + secondpadding
-				+ iSecond.toString();
-		return Integer.parseInt(currTimeString);
+		if (choice == input.SET_TIME) {
+			// Hantera inställning av tid
+			Shared.setTime(Shared.toMillis(input.getValue()));
+			// System.out.println("Time set!");
+		} else if (choice == input.SET_ALARM) {
+			// Hantera inställning av larmtid
+			Shared.setAlarm(Shared.toMillis(input.getValue()));
+			// System.out.println("Alarm set!");
+		}
+
 	}
 }

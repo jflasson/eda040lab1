@@ -11,11 +11,11 @@ public class AlarmClock extends Thread {
 
 	private static ClockInput input;
 	private static ClockOutput output;
-	
+
 	public AlarmClock(ClockInput i, ClockOutput o) {
 		input = i;
 		output = o;
-		initTime();
+		Shared.initTime(input, output);
 		ButtonHandler bHandler = new ButtonHandler(i);
 		bHandler.start();
 		Shared.resetNumOfBeeps();
@@ -27,57 +27,24 @@ public class AlarmClock extends Thread {
 	// below is a simple alarmclock thread that beeps upon
 	// each keypress. To be modified in the lab.
 	public void run() {
+		long t, diff;
+		t = System.currentTimeMillis();
 		while (true) {
 			if (System.currentTimeMillis() % 1000 == 0) {
-				long start = System.currentTimeMillis();
-				System.out.println("TIME++");
-				incrementTime();
-				output.showTime(Shared.toClockTime(Shared.getCurrentTime()));
-				System.out.println("Current millistime " + Shared.getCurrentTime());
-				System.out.println("Current clocktime " + Shared.toClockTime(Shared.getCurrentTime()));
-				if (input.getAlarmFlag()) {
-					boolean alarm = Shared.checkAlarm();
-					System.out.println("Checkalarm: " + alarm);
-					if (alarm) {
-						Shared.setAlarmStatus(true);
-					}
-				}
-				if (Shared.getAlarmStatus() && Shared.getNumOfBeeps() < 20) {
-					output.doAlarm();
-					Shared.incrementNumOfBeeps();
-					if (Shared.getNumOfBeeps() == 20) {
-						Shared.resetNumOfBeeps();
-						Shared.setAlarmStatus(false);
-					}
-				}
-				long stop = System.currentTimeMillis();
-				long ldiff = stop - start;
-				int idiff = (int) ldiff;
+				Shared.incrementTime(input, output);
+				t += 1000;
+				diff = t - System.currentTimeMillis();
 
-				try {
-					// hur länge ska man sleepa?
-					sleep(1000 - idiff);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if (diff > 0) {
+					try {
+						Thread.sleep(diff);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}
-	}
-
-	private void incrementTime() {
-		Shared.addToCurrentTime(1000);
-	}
-
-	private void initTime() {
-		long t = System.currentTimeMillis() + 3600000 * 2; // Compensating for
-															// GMT + 2
-		Shared.setCurrentTime((int) (t % 86400000));
-		Shared.setCurrentTime(Shared.getCurrentTime()/1000);
-		Shared.setCurrentTime(Shared.getCurrentTime()*1000);
-		System.out.println("Time initialized to: " + Shared.getCurrentTime());
-		System.out.println("Corresponding to clocktime: " + Shared.toClockTime(Shared.getCurrentTime()));
-		output.showTime(Shared.toClockTime(Shared.getCurrentTime()));
 	}
 
 }
