@@ -1,46 +1,56 @@
 package todo;
 
 import done.ClockInput;
-import done.ClockOutput;
+
 import se.lth.cs.realtime.semaphore.Semaphore;
 
 /**
  * Handles presses on buttons.
  */
 public class ButtonHandler extends Thread {
+
 	private static ClockInput input;
-	private static ClockOutput output;
 	private static Semaphore sem;
 
-	public ButtonHandler(ClockInput i, ClockOutput o) {
+	public ButtonHandler(ClockInput i) {
 		input = i;
-		output = o;
 		sem = input.getSemaphoreInstance();
 	}
 
 	public void run() {
 		while (true) {
-			System.out.println("KnapptrÂd");
 			sem.take();
+			long start = System.currentTimeMillis();
+			System.out.println("Knapptr√•d");
 			int choice = input.getChoice();
 			System.out.println(choice);
-			if (choice == input.SHOW_TIME) {
+			if (Shared.getAlarmStatus()) {
+				if (choice == input.SHOW_TIME || choice == input.SET_TIME || choice == input.SET_ALARM) {
+					System.out.println("Alarm stopped!");
+					Shared.setAlarmStatus(false);
+					Shared.resetNumOfBeeps();
+				}
+			}
+			if (choice == input.SET_TIME) {
+				// Hantera inst√§llning av tid
+				Shared.setTime(Shared.toMillis(input.getValue()));
+				System.out.println("Time set!");
+			} else if (choice == input.SET_ALARM) {
+				// Hantera inst√§llning av larmtid
+				Shared.setAlarm(Shared.toMillis(input.getValue()));
+				System.out.println("Alarm set!");
+			} else if (choice == input.SHOW_TIME) {
+				long stop = System.currentTimeMillis();
+				long ldiff = stop - start;
+				int idiff = (int) ldiff;
 				try {
-					//ska man sleepa h‰r?
-					sleep(100);
+					sleep(1000 - idiff);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			} else if (choice == input.SET_TIME) {
-				// Hantera inst‰llning av tid
-				Shared.setTime(Shared.toMillis(input.getValue()));
-				System.out.println("Time set!");
-			} else if (choice == input.SET_ALARM) {
-				// Hantera inst‰llning av larmtid
-				Shared.setAlarm(Shared.toMillis(input.getValue()));
-				System.out.println("Alarm set!");
 			}
+
 		}
 	}
 

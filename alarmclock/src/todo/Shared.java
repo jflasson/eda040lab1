@@ -1,26 +1,71 @@
 package todo;
 
+import se.lth.cs.realtime.semaphore.MutexSem;
+
 /**
  * Shared data storage and modification.
  */
 public class Shared {
-	public static int currentTime;
-	public static int alarmTime;
-	// Mutex?
+	private static int currentTime;
+	private static int alarmTime;
+	private static boolean alarmIsRunning;
+	private static int numOfBeeps;
+	private static MutexSem mutex = new MutexSem();
+	
+	public static int getCurrentTime(){
+		return currentTime;
+	}
+	
+	public static void setCurrentTime(int time){
+		mutex.take();
+		currentTime = time;
+		mutex.give();
+	}
+	
+	public static void addToCurrentTime(int toAdd){
+		mutex.take();
+		currentTime += toAdd;
+		mutex.give();
+	}
+	
+	public static void resetNumOfBeeps(){
+		numOfBeeps = 0;
+	}
+	
+	public static int getNumOfBeeps(){
+		return numOfBeeps;
+	}
+	
+	public static void incrementNumOfBeeps(){
+		numOfBeeps++;
+	}
 
 	public static void setAlarm(int i) {
+		mutex.take();
 		alarmTime = i;
+		mutex.give();
 	}
 
 	public static void setTime(int i) {
+		mutex.take();
 		currentTime = i;
+		mutex.give();
 	}
 
 	public static boolean checkAlarm() {
+		System.out.println("CT:" + currentTime + " AT: " + alarmTime);
 		if (currentTime == alarmTime) {
 			return true;
 		}
 		return false;
+	}
+	
+	public static void setAlarmStatus(boolean status){
+		alarmIsRunning = status;
+	}
+	
+	public static boolean getAlarmStatus(){
+		return alarmIsRunning;
 	}
 
 	// Below are conversion methods
@@ -32,19 +77,12 @@ public class Shared {
 		for (int k = 0; k < d; k++) {
 			readableTime = "0" + readableTime;
 		}
-		System.out.println("ReadableTime: " + readableTime);
 		String sHour = readableTime.substring(0, 2);
 		String sMinute = readableTime.substring(2, 4);
 		String sSecond = readableTime.substring(4, 6);
-		System.out.println(sHour);
-		System.out.println(sMinute);
-		System.out.println(sSecond);
 		int iHour = Integer.parseInt(sHour);
-		System.out.println("iHour: " + iHour);
 		int iMinute = Integer.parseInt(sMinute);
-		System.out.println("iMinute: " + iMinute);
 		int iSecond = Integer.parseInt(sSecond);
-		System.out.println("iSecond: " + iSecond);
 		int time = iHour * 3600000 + iMinute * 60000 + iSecond * 1000;
 		return time;
 	}
