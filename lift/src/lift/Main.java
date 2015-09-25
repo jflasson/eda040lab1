@@ -4,6 +4,7 @@ public class Main {
 
 	public static void main(String[] args) {
 		int numOfPersons = 0;
+		int numOfPotatoes = 25;
 		
 		Lift lift = new Lift();
 		Monitor monitor = new Monitor(lift);
