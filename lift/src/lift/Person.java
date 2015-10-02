@@ -17,8 +17,8 @@ public class Person extends Thread {
 		int randStart = 0;
 		int randEnd = 0;
 		while (randStart == randEnd) {
-			randStart = (int) (Math.random() * 6.0);
-			randEnd = (int) (Math.random() * 6.0);
+			randStart = (int) (Math.random() * 7.0);
+			randEnd = (int) (Math.random() * 7.0);
 		}
 		this.startFloor = randStart;
 		this.endFloor = randEnd;
@@ -30,8 +30,8 @@ public class Person extends Thread {
 		int randStart = 0;
 		int randEnd = 0;
 		while (randStart == randEnd) {
-			randStart = (int) (Math.random() * 6.0);
-			randEnd = (int) (Math.random() * 6.0);
+			randStart = (int) (Math.random() * 7.0);
+			randEnd = (int) (Math.random() * 7.0);
 		}
 		this.startFloor = randStart;
 		this.endFloor = randEnd;
@@ -40,41 +40,17 @@ public class Person extends Thread {
 
 	public void run() {
 		while (true) {
-			if (this.newPerson) {
-				monitor.waitEntry[startFloor]++;
-				monitor.lview.drawLevel(startFloor, monitor.waitEntry[startFloor]);
-				this.newPerson = false;
-			}
-			if (waiting) {
-				System.out.println("Waiting on floor " + startFloor);
-				if (monitor.attemptToBoard(startFloor, endFloor)) {
-					System.out.println("Entered elevator");
-					waiting = false;
-				}
-			} else if (!finished) {
-				System.out.println("In lift, wanting to get of at " + endFloor);
-				if (monitor.attemptToExit(endFloor)) {
-					monitor.load--;
-					monitor.lview.drawLift(monitor.currentFloor, monitor.load);
-					System.out.println("Left elevator");
-					finished = true;
-				}
-			} else if (finished) {
-				// code for reset
-				int timeToWait = 1000 * (int) (Math.random() * /* 46.0 */ 1);
-				try {
-					Thread.sleep(timeToWait);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				resetPerson();
-
-			}
+			int timeToWait = 1000 * (int)(Math.random()* /*46.0*/ 10);
 			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				Thread.sleep(timeToWait);
+				resetPerson();
+				monitor.callLift(startFloor, endFloor);
 			}
+			catch (InterruptedException e) {
+				e.printStackTrace(); 
+			}
+			
+			
 		}
 	}
 }

@@ -1,62 +1,74 @@
 package lift;
 
 public class Monitor {
-	
-	public int load = 0;
-	public int currentFloor = 0;
-	public int nextFloor = 1;
-	public int [] waitEntry = new int[6];
-	public int [] waitExit = new int[6];
-	public LiftView lview = new LiftView();
-	
-	public synchronized void moveLift(){
-		if(currentFloor < nextFloor){
-			if(currentFloor == 5){
-				currentFloor = nextFloor;
+
+	private int load = 0;
+	private int currentFloor = 0;
+	private int nextFloor = 1;
+	private int[] waitEntry = new int[7];
+	private int[] waitExit = new int[7];
+	private LiftView lview;
+	private boolean goingUp = true;
+	private int peopleInSystem = 0;
+
+	public Monitor(LiftView lview) {
+		this.lview = lview;
+	}
+
+	public synchronized int[] moveLift() throws InterruptedException {
+		currentFloor = nextFloor;
+		notifyAll();
+		while ((waitEntry[currentFloor] > 0 && load < 4) || waitExit[currentFloor] > 0 || peopleInSystem == 0) {
+			wait();
+		}
+		if (goingUp) {
+			if (currentFloor == 6) {
 				nextFloor = 5;
-			}
-			else{
-				currentFloor = nextFloor;
+				goingUp = false;
+			} else {
 				nextFloor++;
 			}
-		}
-		else if(currentFloor > nextFloor){
-			if(currentFloor == 1){
-				currentFloor = nextFloor;
+		} else {
+			if (currentFloor == 0) {
 				nextFloor = 1;
-			}
-			else{
-				currentFloor = nextFloor;
+				goingUp = true;
+			} else {
 				nextFloor--;
 			}
 		}
-//		System.out.println("Current floor is: " + currentFloor);
+		// System.out.println("Current floor is: " + currentFloor);
 		System.out.println("Load is: " + load);
 		lview.drawLift(currentFloor, load);
+		int[] returnArray = new int[2];
+		returnArray[0] = currentFloor;
+		returnArray[1] = nextFloor;
+		notifyAll();
+		return returnArray;
 	}
 
-
-	public synchronized boolean attemptToBoard(int startFloor, int endFloor) {
-		if(startFloor == currentFloor && load < 4){
-			waitEntry[startFloor]--;
-			lview.drawLevel(startFloor, waitEntry[startFloor]);
-			waitExit[endFloor]++;
-			load++;
-			lview.drawLift(currentFloor, load);
-			return true;
+	public synchronized void callLift(int startFloor, int endFloor) throws InterruptedException {
+		peopleInSystem++;
+		waitEntry[startFloor]++;
+		lview.drawLevel(startFloor, waitEntry[startFloor]);
+		notifyAll();
+		while (currentFloor != startFloor || load > 3 || currentFloor != nextFloor) {
+			wait();
 		}
-		return false;
-		
-	}
+		waitEntry[startFloor]--;
+		lview.drawLevel(startFloor, waitEntry[startFloor]);
+		waitExit[endFloor]++;
+		load++;
+		lview.drawLift(currentFloor, load);
+		notifyAll();
+		System.out.println("Waiting on floor " + startFloor);
 
-	public synchronized boolean attemptToExit(int endFloor) {
-		if(endFloor == currentFloor){
-			waitExit[endFloor]--;
-			
-			lview.drawLift(currentFloor, load);
-			return true;
+		while (currentFloor != endFloor || currentFloor != nextFloor) {
+			wait();
 		}
-		return false;
-		
+		waitExit[endFloor]--;
+		load--;
+		lview.drawLift(currentFloor, load);
+		peopleInSystem--;
+		notifyAll();
 	}
 }
