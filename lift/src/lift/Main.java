@@ -1,28 +1,29 @@
 package lift;
 
+import java.util.ArrayList;
+
 public class Main {
 
 	public static void main(String[] args) {
-		int numOfPersons = 0;
-		int numOfPotatoes = 25;
-		
-		Lift lift = new Lift();
-		Monitor monitor = new Monitor(lift);
-		monitor.addPerson();
-		while(true){
-			if (numOfPersons < 20){
-				
-				int timeToWait = 1000 * (int)(Math.random()*46.0);
-				try {
-					Thread.sleep(timeToWait);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				monitor.addPerson();
-				
-			}
+		ArrayList<Person> people = new ArrayList<Person>();
+		Monitor monitor = new Monitor();
+		Lift lift = new Lift(monitor);
+		for(int i = 0; i < 20; i++){
+			Person temp = new Person(monitor);
+			people.add(temp);
 		}
+		lift.start();
+		for(int j = 0; j < 20; j++){
+			int timeToWait = 1000 * (int)(Math.random()*/*46.0*/ 1);
+			try {
+				Thread.sleep(timeToWait);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace(); 
+			} 
+			people.get(j).start();
+		}
+		
 
 	}
-
 }
