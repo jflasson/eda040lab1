@@ -22,9 +22,8 @@ public class SpinController extends PeriodicThread {
 		se = (SpinEvent) this.mailbox.tryFetch();
 		if(se != null){
 		int spinMode = se.getMode();
-		((RTThread)se.getSource()).putEvent(new RTEvent(this));
-		
 		mach.setSpin(spinMode);
+		((RTThread)se.getSource()).putEvent(new RTEvent(this));
 		
 	//	System.out.println("Exiting spin controller");
 		}

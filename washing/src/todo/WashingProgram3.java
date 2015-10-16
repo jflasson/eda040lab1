@@ -36,9 +36,6 @@ class WashingProgram3 extends WashingProgram {
 			WaterController waterController,
 			SpinController spinController) {
 		super(mach, speed, tempController, waterController, spinController);
-		tempController.start();
-		waterController.start();
-		spinController.start();
 	}
 
 	// ---------------------------------------------------------- PUBLIC METHODS

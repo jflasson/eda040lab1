@@ -7,10 +7,11 @@ import done.AbstractWashingMachine;
 public class WaterController extends PeriodicThread {
 	// TODO: add suitable attributes
 	private AbstractWashingMachine mach;
-	private double waterLevel = 0;
 	private double targetWaterLevel;
 	private int pumpMode;
 	private WaterEvent we;
+	private WaterEvent te;
+	private boolean first = true;
 
 	public WaterController(AbstractWashingMachine mach, double speed) {
 		super((long) (1000 / speed)); // TODO: replace with suitable period
@@ -18,47 +19,45 @@ public class WaterController extends PeriodicThread {
 	}
 
 	public void perform() {
-		// TODO: implement this method
-	//	System.out.println("Entering water controller");
-		we = (WaterEvent) this.mailbox.tryFetch();
-		if (we != null) {
+		te = (WaterEvent) this.mailbox.tryFetch();
+		if (te != null) {
+			first = true;
+			we = te;
 			targetWaterLevel = we.getLevel();
 			pumpMode = we.getMode();
-			((RTThread) we.getSource()).putEvent(new RTEvent(this));
-
-			System.out.println("Target water level: " + targetWaterLevel);
-			System.out.println("Current water level: " + mach.getWaterLevel());
-			switch (pumpMode) {
-			case 0:
-				mach.setDrain(false);
-				mach.setFill(false);
-				break;
-			case 1:
-				if (mach.getWaterLevel() < targetWaterLevel) {
-					mach.setDrain(false);
-					mach.setFill(true);
-				} else {
-					mach.setDrain(false);
-					mach.setFill(false);
-				}
-				break;
-			case 2:
-				mach.setDrain(true);
-				mach.setFill(false);
-				break;
-			default:
-
-			//	System.out.println("Exiting water controller");
-			}
 		}
 
-		// if(waterLevel < targetWaterLevel){
-		// mach.setFill(true);
-		// }else if(waterLevel > targetWaterLevel){
-		// mach.setDrain(true);
-		// }else if(waterLevel == targetWaterLevel){
-		// mach.setFill(false);
-		// mach.setDrain(false);
-		// }
+		switch (pumpMode) {
+		case WaterEvent.WATER_IDLE:
+			mach.setDrain(false);
+			mach.setFill(false);
+			break;
+		case WaterEvent.WATER_FILL:
+			if (mach.getWaterLevel() < targetWaterLevel) {
+				mach.setDrain(false);
+				mach.setFill(true);
+			} else {
+				mach.setFill(false);
+				if (first) {
+					((RTThread) we.getSource()).putEvent(new RTEvent(this));
+					first = false;
+				}
+			}
+			break;
+		case WaterEvent.WATER_DRAIN:
+			if (mach.getWaterLevel() != 0) {
+				mach.setDrain(true);
+				mach.setFill(false);
+			} else {
+				mach.setDrain(false);
+				if (first) {
+					((RTThread) we.getSource()).putEvent(new RTEvent(this));
+					first = false;
+				}
+			}
+			break;
+		default:
+
+		}
 	}
 }
