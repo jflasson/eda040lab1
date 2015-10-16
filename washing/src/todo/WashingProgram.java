@@ -128,4 +128,3 @@ public abstract class WashingProgram extends RTThread {
 	 */
 	protected SpinController mySpinController;
 }
-
