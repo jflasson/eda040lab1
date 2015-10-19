@@ -47,7 +47,7 @@ public class TemperatureController extends PeriodicThread {
 						first = false;
 					}
 					mach.setHeating(false);
-				} else if (mach.getTemperature() <= onTemp) {
+				} else if (mach.getTemperature() <= onTemp && mach.getWaterLevel() > 0) {
 					mach.setHeating(true);
 				}
 				break;

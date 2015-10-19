@@ -11,6 +11,7 @@ public class WashingController implements ButtonListener {
 	private SpinController spinController;
 	private WashingProgram wp;
 
+
 	public WashingController(AbstractWashingMachine theMachine, double theSpeed) {
 		tempController = new TemperatureController(theMachine, theSpeed);
 		waterController = new WaterController(theMachine, theSpeed);
@@ -29,23 +30,40 @@ public class WashingController implements ButtonListener {
 		switch (theButton) {
 		case 0:
 			System.out.println("Button 0 pressed");
-			if (wp != null && wp.isAlive()) {
+			if (wp != null) {
+				if(wp.isAlive()){
 					wp.interrupt();
+					wp = null;
+				}
 			}
 			break;
 		case 1:
 			System.out.println("Button 1 pressed");
-			wp = new WashingProgram1(theMachine, theSpeed, tempController, waterController, spinController);
+			if(wp != null && wp.isAlive()){
+				System.out.println("Program already in progress!");
+			}else{
+				wp = new WashingProgram1(theMachine, theSpeed, tempController, waterController, spinController);
+			}
 			break;
 		case 2:
 			System.out.println("Button 2 pressed");
-			wp = new WashingProgram2(theMachine, theSpeed, tempController, waterController, spinController);
+			if(wp!= null && wp.isAlive()){
+				System.out.println("Program already in progress!");
+			}else{
+				wp = new WashingProgram2(theMachine, theSpeed, tempController, waterController, spinController);
+			}
 			break;
 		case 3:
 			System.out.println("Button 3 pressed");
-			wp =  new WashingProgram3(theMachine, theSpeed, tempController, waterController, spinController);
+			if(wp != null && wp.isAlive()){
+				System.out.println("Program already in progress!");
+			}else{
+				wp = new WashingProgram3(theMachine, theSpeed, tempController, waterController, spinController);
+			}
 			break;
 		}
-		wp.start();
+		if(wp != null && !wp.isAlive()){
+			wp.start();
+		}
 	}
 }
